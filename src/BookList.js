@@ -21,21 +21,26 @@ class BookList extends React.Component {
     }
   }
 
-  updateBookToShelf = (bookId, newShelf) => {
-    const updatedBook = this.state.books.filter((book) => book.id === bookId)[0];
+  updateBookToShelf = (id, newShelf) => {
+    const updatedBook = this.state.books.filter((book) => book.id === id)[0];
+    let prevShelf = updatedBook.shelf;
     updatedBook.shelf = newShelf;
     this.setState((prevState) => ({
-      books: [...prevState.books.filter((book) => book.id !== bookId), updatedBook ],
+      books: [...prevState.books.filter((book) => book.id !== id), updatedBook],
     }));
 
-    // >>> TODO: API Doesn't seem to update the bookshelf
-    update(bookId, newShelf)
+    // Note: update does not give an error if there is an issue with the update (e.g. { idXYZ: 0 })
+    update({ id }, newShelf)
     .then((response) => {
       console.log("update response: ", response);
     })
-    .catch((error) => {
-      console.log(`error: ${error}`);
-    });
+      .catch((error) => {
+        console.log(`updateBookToShelf update error: ${error}`);
+        updatedBook.shelf = prevShelf;
+        this.setState((prevState) => ({
+          books: [...prevState.books.filter((book) => book.id !== id), updatedBook],
+        }));
+      });
   };
 
   state = {
@@ -44,6 +49,20 @@ class BookList extends React.Component {
   };
 
   render() {
+    const BOOK_SHELVES = [
+      {
+        title: "Currently Reading",
+        id: "currentlyReading",
+      },
+      {
+        title: "Want To Read",
+        id: "wantToRead",
+      },
+      {
+        title: "Read",
+        id: "read",
+      },
+    ];
 
     return (
       <div className="list-books">
@@ -51,27 +70,16 @@ class BookList extends React.Component {
           <h1>MyReads</h1>
         </div>
         <div className="list-books-content">
-          <div>
+          {BOOK_SHELVES.map((bookShelf) => (
             <BookShelf
-              BookShelfTitle="Currently Reading"
+              key={bookShelf.id}
+              BookShelfTitle={bookShelf.title}
               updateBookToShelf={this.updateBookToShelf}
               books={this.state.books.filter(
-                (book) => book.shelf === "currentlyReading"
+                (book) => book.shelf === bookShelf.id
               )}
             />
-            <BookShelf
-              BookShelfTitle="Want to Read"
-              updateBookToShelf={this.updateBookToShelf}
-              books={this.state.books.filter(
-                (book) => book.shelf === "wantToRead"
-              )}
-            />
-            <BookShelf
-              BookShelfTitle="Read"
-              updateBookToShelf={this.updateBookToShelf}
-              books={this.state.books.filter((book) => book.shelf === "read")}
-            />
-          </div>
+          ))}
         </div>
         <div className="open-search">
           <Link to="/search">Add a book</Link>

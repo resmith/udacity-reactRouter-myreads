@@ -1,69 +1,125 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Overview of the My Reading application architecture
 
-## Available Scripts
+This is the MyReads project for Udacity's React Course. This project focuses on state and React Router. This is from Part 2: React Fundamentals - My Reads - A Book Tracking App.
 
-In the project directory, you can run:
+The intention is to create a goodreads type application that is used for seaching for books and putting them on book shelves for reference. For example, the bookshelves currently are: "Currently Reading", "Read", "Want to Read". The book shelves are defined in /src/BookList.js.
 
-### `yarn start`
+- Note: The book shelve constants (name and id) can be moved out to a constant file, but as they're referenced only by BookList it was decided to leave them within that component. \*
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### Components / Responsibilities
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+All components are in the /src directory
 
-### `yarn test`
+App.js - Responsible for routing. The two primary routes are: BookList and Search - inputs: none
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+BookList - container responsible for including all the various booksShelfs. Passes to the individual bookshelf the Book Shelf Title (e.g. "Currently Reading") and BookShelf
+id (e.g. "currentlyReading") - inputs: none
 
-### `yarn build`
+BookShelf - Responsible for rendering a specific bookshelf
+Includes the books component to render the books on each shelf
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+           inputs:
+            Receives:
+                Book Shelf Title (e.g.  "Currently Reading")
+                BookShelf id (e.g. "currentlyReading")
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+            external calls:
+            Calls the BookApi for the books that should be shown on the specific bookshelf
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Book: Responsible for displaying the book, specifically the book information (title, author), image and a component for showing and changing the bookshelf a book is on
 
-### `yarn eject`
+    inputs: the book information via props
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+Search: Responsbile for listing the books meeting the user keyed search terms
+inputs: none
+does provide a GUI for the user to enter search terms
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+            external calls:
+            Calls the BookApi for the books that match the search criteria
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+### Component Heirarchy
 
-## Learn More
+├── BookList - contains the list of bookshelves
+└── BookShelf - renders each individual bookshelf
+└── Book - renders each book
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+├── BookSearch - Container for the book search logic
+└── Book - renders each book
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Install
 
-### Code Splitting
+To utilize this application
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
+1. Ensure that NPM is installed (https://www.npmjs.com/get-npm)
+2. Clone this project
+   git clone git@github.com:resmith/udacity-react-proj-l5ReactRouter-myreads.git
+3. cd to the project directory
+4. Install the project dependencies with `npm install`
+5. Start the development server with `npm start`
 
-### Analyzing the Bundle Size
+## What You're Getting
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
+```bash
+├── README.md - This file.
+├── SEARCH_TERMS.md # The whitelisted short collection of available search terms for you to use with your app.
+└── src
+    ├── App.js # The root of the app. The router handler wraps the app here
+    ├── BooksAPI.js # A JavaScript API for the provided Udacity backend. Instructions for the methods are below.
+    └── index.js # You should not need to modify this file. It is used for DOM rendering only.
+```
 
-### Making a Progressive Web App
+## Backend Server
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
+A back-end server is utilized that provides an API for accessing the books.
+The API is at: https://reactnd-books-api.udacity.com
 
-### Advanced Configuration
+The file [`BooksAPI.js`](src/BooksAPI.js) contains the methods needed to perform necessary operations on the backend:
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
+- [`getAll`](#getall)
+- [`update`](#update)
+- [`search`](#search)
 
-### Deployment
+### `getAll`
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
+Method Signature:
 
-### `yarn build` fails to minify
+```js
+getAll();
+```
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
-# udacity-react-proj-l5ReactRouter-myreads
+- Returns a Promise which resolves to a JSON object containing a collection of book objects.
+- This collection represents the books currently in the bookshelves in your app.
+
+### `update`
+
+Method Signature:
+
+```js
+update(book, shelf);
+```
+
+- book: `<Object>` containing at minimum an `id` attribute
+- shelf: `<String>` contains one of ["wantToRead", "currentlyReading", "read"]
+- Returns a Promise which resolves to a JSON object containing the response data of the POST request
+
+### `search`
+
+Method Signature:
+
+```js
+search(query, maxResults);
+```
+
+- query: `<String>`
+- maxResults: `<Integer>` Due to the nature of the backend server, search results are capped at 20, even if this is set higher.
+- Returns a Promise which resolves to a JSON object containing a collection of book objects.
+- These books do not know which shelf they are on. They are raw results only. You'll need to make sure that books have the correct state while on the search page.
+
+## Important
+
+The backend API uses a fixed set of cached search results and is limited to a particular set of search terms, which can be found in [SEARCH_TERMS.md](SEARCH_TERMS.md). That list of terms are the _only_ terms that will work with the backend.
+
+## Create React App
+
+This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app). You can find more information on how to perform common tasks [here](https://github.com/facebookincubator/create-react-app/blob/master/packages/react-scripts/template/README.md).

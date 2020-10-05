@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-import { getAll, search, update } from "./BooksAPI";
+import { search, update } from "./BooksAPI";
 import Book from "./Book";
 
 const MAX_QUERY_RESULTS = 50;
@@ -34,51 +34,62 @@ class BooksSearch extends React.Component {
     if (value === "") {
       this.setState({
         books: [],
+        validResponse: true,
       });
       return;
     }
 
     search(value, MAX_QUERY_RESULTS)
       .then((matchingBooks) => {
-        if (Array.isArray(matchingBooks) || matchingBooks.length > 0) {
-          getAll().then((booksOnShelf) => {
-            // Needed because search results don't provide bookshelf
-            this.setState({
-              books: matchingBooks.map((book) => {
-                let matchingBook = booksOnShelf.find(
-                  (bookOnShelf) => bookOnShelf.id === book.id
-                );
-                return { ...book, shelf: matchingBook ? matchingBook.shelf : "" }
-              }),
-              validSetBooks: true,
-            });
+        if (matchingBooks.error && matchingBooks.error === "empty query") {
+          this.setState({
+            books: [],
+            validResponse: false,
           });
         } else {
           this.setState({
-            books: [],
-            validSetBooks: false,
+            books: matchingBooks.filter(
+              (book) => book.shelf === undefined || book.shelf === "none"
+            ),
+            validResponse: true,
           });
         }
       })
       .catch((error) => {
-        console.log(`BookSearch search error: ${error}`);
-        this.setState({
-          books: [],
-          validSetBooks: false,
-        });
+        if (error === "empty query") {
+          this.setState({
+            books: [],
+            validResponse: false,
+          });
+        } else {
+          console.log(`error: ${error}`);
+          this.setState({
+            books: [],
+            validResponse: false,
+          });
+        }
       });
   };
 
   updateBookToShelf = (id, newShelf) => {
-    const updatedBook = this.state.books.filter((book) => book.id === id)[0];
+    const updatedBook = this.state.books.filter(
+      (book) => book.id === id
+    )[0];
     updatedBook.shelf = newShelf;
     this.setState((prevState) => ({
-      books: [...prevState.books.filter((book) => book.id !== id), updatedBook],
+      books: [
+        ...prevState.books.filter((book) => book.id !== id),
+        updatedBook,
+      ],
     }));
 
-    update({ id }, newShelf).catch((error) => {
-      console.log(`BookSearch update error: ${error}`);
-    });
+    update({ id }, newShelf)
+      .then((response) => {
+        console.log("update response: ", response);
+      })
+      .catch((error) => {
+        console.log(`error: ${error}`);
+      });
   };
 
   state = {
@@ -87,6 +98,7 @@ class BooksSearch extends React.Component {
   };
 
   render() {
+    console.log(this.state.books)
     return (
       <div className="search-books">
         <div className="search-books-bar">
@@ -105,9 +117,12 @@ class BooksSearch extends React.Component {
         </div>
         <div className="search-books-results">
           <ol className="books-grid">
-            {this.state.validSetBooks &&
+            {this.state.validResponse &&
+              Array.isArray(this.state.books) &&
               this.state.books
-                .sort((a,b) => a.title === b.title ? 0 : a.title > b.title ? 1 : -1)
+                .filter(
+                  (book) => book.shelf === undefined || book.shelf === "none"
+                )
                 .map((book) => {
                   return (
                     <li key={book.id}>
