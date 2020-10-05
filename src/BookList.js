@@ -29,16 +29,19 @@ class BookList extends React.Component {
       books: [...prevState.books.filter((book) => book.id !== id), updatedBook],
     }));
 
-    // Note: update does not give an error if there is an issue with the update (e.g. { idXYZ: 0 })
     update({ id }, newShelf)
-    .then((response) => {
-      console.log("update response: ", response);
-    })
+      .then((response) => {
+        console.log("update response: ", response);
+      })
       .catch((error) => {
+        // Note: update does not give an error if there is an issue with the update (e.g. { idXYZ: 0 })
         console.log(`updateBookToShelf update error: ${error}`);
         updatedBook.shelf = prevShelf;
         this.setState((prevState) => ({
-          books: [...prevState.books.filter((book) => book.id !== id), updatedBook],
+          books: [
+            ...prevState.books.filter((book) => book.id !== id),
+            updatedBook,
+          ],
         }));
       });
   };
